@@ -1,0 +1,41 @@
+
+
+.textfield {
+    width: 100%;
+    margin-bottom: 10px;
+}
+.checkbox {
+    display: flex;
+    width: fit-content;
+    white-space: nowrap;
+    gap: 10px;
+}
+
+
+.button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start; /* Align buttons to the left */
+    gap: 10px;
+    width: auto; /* Do not stretch full width */
+}
+
+button {
+    max-width: 80px;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 100%;
+    box-sizing: border-box;
+    border-radius:8px;
+}
+
+button[type="submit"] {
+    background-color: #4a90e2;
+    color: white;
+}
+
+button[type="reset"] {
+    background-color: #ff4545;
+    color: white;
+}
