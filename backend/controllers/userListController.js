@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const UserList = require("../models/UserList");
+const Review = require("../models/review");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
@@ -38,10 +39,50 @@ exports.getUserList = async (req, res) => {
       const page = parseInt(req.query.page) || 1; 
       const limit = parseInt(req.query.limit) || 5;
       const skip = (page - 1) * limit;
+      const ratingFilter =  req.query.rating;
 
-      const total = await UserList.countDocuments({ user_id });
+      const allbooks = await  UserList.find({user_id});
+      const allIsbn = allbooks.map(book=>book.isbn);
 
-      const books = await ( UserList.find({user_id}).skip(skip)).limit(limit);
+      let filteredIsbns = allIsbn;
+      if( ratingFilter && ratingFilter !== "all"){
+        const reviewFilter ={user_id};
+      
+        if (ratingFilter === "na") {
+          const reviewedIsbns = await Review.find({ user_id }).distinct("isbn");
+         
+          const neverReviewedIsbns = allIsbn.filter(
+            isbn => !reviewedIsbns.includes(isbn)
+          );//contain isbn that no any review
+
+          //all book without rating
+          const nullRatedReviews = await Review.find({
+          user_id,
+          $or: [
+            { rating: { $exists: false } },
+            { rating: null },
+            { rating: { $not: { $in: [1, 2, 3, 4, 5] } } }
+          ],
+        });
+        const nullRatedIsbns = nullRatedReviews.map(r => r.isbn);// change all book without rating to isbn
+
+        filteredIsbns = [...new Set([...neverReviewedIsbns, ...nullRatedIsbns])];
+        }else {
+          reviewFilter.rating = parseInt(ratingFilter);
+          const matchedReviews = await Review.find(reviewFilter);
+          filteredIsbns = matchedReviews.map(r => r.isbn);
+        }
+      }
+
+      const books = await UserList.find({
+        user_id,
+        isbn: { $in: filteredIsbns },
+      })
+      .skip(skip)
+      .limit(limit);
+
+      const total = filteredIsbns.length;
+
   
       res.status(200).json({
         status: "success",

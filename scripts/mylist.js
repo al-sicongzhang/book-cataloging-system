@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 
   document.getElementById("ratingFilter").addEventListener("change", () => {
     const selected = document.getElementById("ratingFilter").value;
-    applyFilter(selected);
+    fetchBooks(1);
   });
 
 // get all book info array
@@ -14,7 +14,9 @@ document.addEventListener("DOMContentLoaded", async() => {
   let allBooks = [];
   async function fetchBooks(page=1) {
   const token = localStorage.getItem("token");
-  const res= await fetch(`http://localhost:3000/api/userlist/get?page=${page}&limit=${limit}`, {
+  const rating = document.getElementById("ratingFilter").value;
+
+  const res= await fetch(`http://localhost:3000/api/userlist/get?page=${page}&limit=${limit}&rating=${rating}`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`
@@ -112,26 +114,6 @@ document.addEventListener("DOMContentLoaded", async() => {
       container.appendChild(nextBtn);
     }
   }
-  
-
-  function applyFilter(ratingValue) {
-    let filtered = [];
-  
-    filtered = allBooks.filter(book => {
-      const rating = book.rating;
-  
-      if (ratingValue === "all") return true;
-  
-      if (ratingValue === "na") {
-        return !rating || rating === "N/A";
-      }
-  
-      return parseInt(rating) === parseInt(ratingValue);
-    });
-  
-    renderList(filtered);
-  }
-  
 
   async function renderList(books) {
     container.innerHTML = "";

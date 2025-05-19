@@ -21,7 +21,9 @@ exports.addOrUpdateReview = async (req, res)=>{
 
         if(rating!== undefined){
             rating = Number(rating);
-            if(!Number.isInteger(rating)||rating<1||rating>5){
+            if (isNaN(rating)) {
+                rating = null;
+              } else if(!Number.isInteger(rating)||rating<1||rating>5){
                 return res.status(400).json({
                     status:"fail",
                     message:"Rating must be an integer between 1 and 5"
