@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 exports.addOrUpdateReview = async (req, res)=>{
     try{
         const user_id = req.user.id;
-        const{isbn,rating,comment}=req.body;
+        let {isbn,rating,comment}=req.body;
 
 
         if((rating === undefined || rating === null) &&
@@ -20,6 +20,7 @@ exports.addOrUpdateReview = async (req, res)=>{
         }
 
         if(rating!== undefined){
+            rating = Number(rating);
             if(!Number.isInteger(rating)||rating<1||rating>5){
                 return res.status(400).json({
                     status:"fail",

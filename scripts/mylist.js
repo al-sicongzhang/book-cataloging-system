@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", async() => {
   const container = document.getElementById("BookListContainer");
   const user_id = localStorage.getItem("user_id");
 
-  let allBooks = [];
 
   document.getElementById("ratingFilter").addEventListener("change", () => {
     const selected = document.getElementById("ratingFilter").value;
@@ -10,34 +9,38 @@ document.addEventListener("DOMContentLoaded", async() => {
   });
 
 // get all book info array
-  function fetchBooks() {
+  let currentPage = 1;
+  const limit = 5;
+  let allBooks = [];
+  async function fetchBooks(page=1) {
   const token = localStorage.getItem("token");
-
-  fetch("http://localhost:3000/api/userlist/get", {
+  const res= await fetch(`http://localhost:3000/api/userlist/get?page=${page}&limit=${limit}`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`
     }
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === "success") {
+  });
+
+    const data= await res.json();
+    if (data.status === "success") {
         const books = data.data;
+        currentPage = data.page;
+
+        if (!window.userReviews || page === 1) {
+          window.userReviews = await fetchReviews();
+        }
 
         books.forEach(book => {
           const matchedReview = userReviews.find(r => r.isbn === book.isbn);
           book.rating = matchedReview?.rating ?? null;
+          book.comment = matchedReview?.comment ?? "";
         });
 
-        allBooks = books;
-        renderList(allBooks); 
+        renderList(books); 
+        renderPagination(data.page, data.totalPages);
       } else {
         console.error("Failed to fetch:", data.message);
       }
-    })
-    .catch(err => {
-      console.error("Error:", err);
-    });
   }
 
   //get user's review array
@@ -77,6 +80,40 @@ document.addEventListener("DOMContentLoaded", async() => {
     div.appendChild(reviewsContainer);
   }
 
+  function renderPagination(currentPage, totalPages) {
+    const container = document.getElementById("pagination");
+    container.innerHTML = "";
+  
+    if (currentPage > 1) {
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "« Prev";
+      prevBtn.className = "page-btn";
+      prevBtn.onclick = () => fetchBooks(currentPage - 1);
+      container.appendChild(prevBtn);
+    }
+  
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = "page-btn";
+      if (i === currentPage) {
+        btn.disabled = true;
+        btn.classList.add("active-page");
+      }
+      btn.onclick = () => fetchBooks(i);
+      container.appendChild(btn);
+    }
+  
+    if (currentPage < totalPages) {
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next »";
+      nextBtn.className = "page-btn";
+      nextBtn.onclick = () => fetchBooks(currentPage + 1);
+      container.appendChild(nextBtn);
+    }
+  }
+  
+
   function applyFilter(ratingValue) {
     let filtered = [];
   
@@ -98,15 +135,12 @@ document.addEventListener("DOMContentLoaded", async() => {
 
   async function renderList(books) {
     container.innerHTML = "";
-    await fetchReviews();
 
     books.forEach(book => {
       const div = document.createElement("div");
       div.className = "book-card";
-    // find current book review by isbn
-    const myReview = userReviews.find(r => r.isbn === book.isbn);
-    const rating = myReview ? myReview.rating : "";
-    const comment = myReview ? myReview.comment : "";
+      const rating = book.rating ?? "";
+      const comment = book.comment ?? "";
       
       div.innerHTML = `
         <div class="book-card-columns">
@@ -146,7 +180,6 @@ document.addEventListener("DOMContentLoaded", async() => {
           </div>
         </div>
       `;    
-
       container.appendChild(div);
     });
   }
@@ -216,7 +249,7 @@ document.addEventListener("DOMContentLoaded", async() => {
       const card = btn.closest(".book-card");
       const isbn = btn.dataset.isbn;
 
-      const rating = card.querySelector(".edit-rating").value;
+      const rating = parseInt(card.querySelector(".edit-rating").value);
       const comment = card.querySelector(".edit-comment").value;
   
       const token= localStorage.getItem("token");
@@ -275,5 +308,5 @@ document.addEventListener("DOMContentLoaded", async() => {
     }
   });
 
-  fetchBooks();
+  fetchBooks(1);
 });

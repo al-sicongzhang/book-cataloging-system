@@ -35,11 +35,20 @@ exports.addBookToUserList = async (req,res)=>{
 exports.getUserList = async (req, res) => {
     try {
       const user_id = req.user.id;
-      const books = await UserList.find({ user_id });
+      const page = parseInt(req.query.page) || 1; 
+      const limit = parseInt(req.query.limit) || 5;
+      const skip = (page - 1) * limit;
+
+      const total = await UserList.countDocuments({ user_id });
+
+      const books = await ( UserList.find({user_id}).skip(skip)).limit(limit);
   
       res.status(200).json({
         status: "success",
-        data: books
+        data: books,
+        page,
+        totalPages:Math.ceil(total/limit),
+        totalItem:total,
       });
     } catch (err) {
       console.error("Error fetching user list:", err);

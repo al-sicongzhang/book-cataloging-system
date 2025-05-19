@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("You need to log in to leave a review.");
             return;
           }
-          const rating = document.getElementById("userRating").value.trim();
+          const rating = parseInt(document.getElementById("userRating").value.trim());
           const comment = document.getElementById("userComment").value.trim();
 
           if (!rating && !comment) {
